@@ -1,13 +1,18 @@
-#include <iostream>
-#include <deque>
-#include <queue>
-#include <vector>
+/*
+FELIPE HOMRICH MELCHIOR
+UNIPAMPA - 161150758
+*/
 
-#define PUZZLESIZE 9
+#include <iostream>
+#include <deque> //Biblioteca da fila
+#include <stack> //Biblioteca da pilha
+#include <vector> //Biblioteca do vector
+
+#define PUZZLESIZE 9 //Definido o tamanho do desafio
 
 using namespace std;
 
-struct node {
+struct node { //Nodo da árvore
 	int *state;
 	int cost;
 	int action;
@@ -15,7 +20,7 @@ struct node {
 };
 typedef struct node Node;
 
-Node* createNode(int *state, int depth, int cost, int action) {
+Node* createNode(int *state, int depth, int cost, int action) { // Função de criação de um nodo
 	Node *g = (Node*) malloc(sizeof(Node));
 	g->state = state;
 	g->cost = cost;
@@ -25,7 +30,7 @@ Node* createNode(int *state, int depth, int cost, int action) {
 	return g;
 }
 
-void printState(int *state) {
+void printState(int *state) { // Funcao que printa o estado que foi recebido via parametro
 	for(int i = 0; i < PUZZLESIZE; i++) {
 		cout << state[i] << " ";
 	}
@@ -40,7 +45,7 @@ void printState(int *state) {
 4: direita
 */
 
-int* createState(int* currentState, int blank, int action) {
+int* createState(int* currentState, int blank, int action) { // Funcao que movimenta o indice vazio (0)
 	int aux;
 	int* newState = (int*) malloc(sizeof(int)*(PUZZLESIZE));
 
@@ -93,7 +98,7 @@ int* createState(int* currentState, int blank, int action) {
 	return newState;
 }
 
-int compareStates(int* newState, int* closeStates) {
+int compareStates(int* newState, int* closeStates) { //Compara dois estados recebidos
 	int count = 0;
 
 	for(int i = 0; i < PUZZLESIZE-1; i++) {
@@ -104,7 +109,7 @@ int compareStates(int* newState, int* closeStates) {
 	else return 0;
 }
 
-int nodeExisting(int* newState, vector<int*>*closeStates) {
+int nodeExisting(int* newState, vector<int*>*closeStates) { // Compara um estado recebido com todos os estados que ja foram percorridos, para verificar existencia
 	for(int i = 0; i < closeStates->size(); i++) {
 		int count = 0;
 		for(int j = 0; j < PUZZLESIZE; j++) {
@@ -112,14 +117,14 @@ int nodeExisting(int* newState, vector<int*>*closeStates) {
 				count++;
 				if(count == PUZZLESIZE-1) return 1;
 			}
-			else return 0;
+			else break;
  		}
 	}
 
 	return 0;
 }
 
-vector<Node*> geraFilhos(Node* currentNode, vector<int*>*closeStates) {
+vector<Node*> geraFilhos(Node* currentNode, vector<int*>*closeStates) { //Funcao que gera os estados-filhos atraves do estado-pai
 	int blank;
 	int* newState = (int*) malloc(sizeof(int)*(PUZZLESIZE));
 	Node* nodo_filho = new Node;
@@ -143,7 +148,7 @@ vector<Node*> geraFilhos(Node* currentNode, vector<int*>*closeStates) {
 
 }
 
-int bfs(Node *initialNode, int* finalState) {
+int bfs(Node *initialNode, int* finalState) { //Busca em largura com fila
 	Node* currentNode;
 	deque<Node*> fila;
 
@@ -167,7 +172,8 @@ int bfs(Node *initialNode, int* finalState) {
 
 		for(int i = 0; i < filhos.size(); i++) {
 			if(compareStates(filhos.at(i)->state, finalState)) {
-				cout << filhos.at(i)->cost << endl;
+				printState(filhos.at(i)->state);
+				cout << "BFS -> Solução encontrada com " << filhos.at(i)->cost << " Movimentos" << endl;
 				return 1;
 			}else{
 				fila.push_back(filhos.at(i));
@@ -175,15 +181,60 @@ int bfs(Node *initialNode, int* finalState) {
 			}
 		}
 	}
+
+	cout << "BFS -> Solução não encontrada" << endl;
 	return 0;
 }
 
-int main() {
-	int initialState[PUZZLESIZE] = {1, 6, 7, 2, 5, 3, 4, 0, 8};
-	int finalState[PUZZLESIZE] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
-	Node *initialNode = createNode(initialState, 0, 0, -1);
+int dfs(Node *initialNode, int* finalState) { //busca em profundidade com pilha
+	Node* currentNode;
+	stack<Node*> pilha;
 
-	if(bfs(initialNode, finalState)) cout << "Encontrei o finalState" << endl;
-	else cout << "Não encontrei o finalState" << endl;
+	vector<int*> closeStates;
+	vector<Node*> filhos;
 
+	pilha.push(initialNode);
+	closeStates.push_back(initialNode->state);
+
+	if(compareStates(initialNode->state, finalState)) {
+		return 1;
+	}
+
+	while(!pilha.empty()) {
+		currentNode = pilha.top();
+		pilha.pop();
+
+		if(!closeStates.empty()) {		
+			filhos = geraFilhos(currentNode, &closeStates);
+		}
+
+		for(int i = 0; i < filhos.size(); i++) {
+			if(compareStates(filhos.at(i)->state, finalState)) {
+				printState(filhos.at(i)->state);
+				cout << "DFS -> Solução encontrada com " << filhos.at(i)->cost << " Movimentos" << endl;
+				return 1;
+			}else{
+				pilha.push(filhos.at(i));
+				closeStates.push_back(filhos.at(i)->state);
+			}
+		}
+	}
+
+	cout << "DFS-> Solução não encontrada" << endl;
+	return 0;
+}
+
+
+int main(void) {
+	/*Declaração do estado inicial, com um exemplo ja comentado
+	{4, 3, 0, 6, 7, 2, 8, 1, 5}; -> BFS-> Cerca de 0.2s :: DFS-> Cerca de 17s
+	*/
+	int initialState[PUZZLESIZE] =  {1, 6, 7, 2, 5, 3, 4, 0, 8}; //{4, 3, 0, 6, 7, 2, 8, 1, 5};
+ 	int finalState[PUZZLESIZE] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+	Node *initialNode = createNode(initialState, 0, 0, -1); //Criacao do nodo inicial
+
+	printState(initialNode->state); //Imprime o estado inicial
+
+	bfs(initialNode, finalState); //Faz a busca em largura
+	dfs(initialNode, finalState); //Faz a busca em profundidade
 }
