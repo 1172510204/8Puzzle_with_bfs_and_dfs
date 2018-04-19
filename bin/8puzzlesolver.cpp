@@ -102,41 +102,40 @@ int compareStates(int* newState, int* closeStates) {
 
 	if(count == PUZZLESIZE-1) return 1;	
 	else return 0;
-
 }
 
-vector<Node*> *geraFilhos(Node* currentNode, vector<Node*>*closeStates) {
+int nodeExisting(int* newState, vector<int*>*closeStates) {
+	for(int i = 0; i < closeStates->size(); i++) {
+		int count = 0;
+		for(int j = 0; j < PUZZLESIZE; j++) {
+			if(newState[j] == closeStates->at(i)[j]) {
+				count++;
+				if(count == PUZZLESIZE-1) return 1;
+			}
+			else return 0;
+ 		}
+	}
+
+	return 0;
+}
+
+vector<Node*> geraFilhos(Node* currentNode, vector<int*>*closeStates) {
 	int blank;
 	int* newState = (int*) malloc(sizeof(int)*(PUZZLESIZE));
-	int action[4] = { 0, 0, 0, 0 };
-	int size = closeStates->size();
 	Node* nodo_filho = new Node;
-	vector<Node*> *filhos = new vector<Node*>;
+	vector<Node*> filhos;
 
 	for(int i = 0; i < PUZZLESIZE; i++) {
 		if(currentNode->state[i] == 0) blank = i;
 	}
 
-	//cout << closeStates->size() << endl;
-
-	if(blank - 3 >= 0) action[0] = 1;
-	if(blank + 3 < PUZZLESIZE) action[1] = 2;
-	if(blank % 3 > 0) action[2] = 3;
-	if(blank < PUZZLESIZE-1 && (blank % 3) < 2) action[3] = 4;
-
 	for(int i = 0; i < 4; i++) {
+		newState = createState(currentNode->state, blank, i+1);
 
-		if(action[i] != 0) {
-			newState = createState(currentNode->state, blank, action[i]);
-			
-			for(int j = 0; j < size; j++) {
-				if(!compareStates(newState, closeStates->at(j)->state)) {
-					nodo_filho = createNode(newState, 0, currentNode->cost+1, action[i]);
+		if(!(compareStates(currentNode->state, newState)) && !(nodeExisting(newState, closeStates))) {
+			nodo_filho = createNode(newState, currentNode->d+1, currentNode->cost+1, i);
 
-					filhos->push_back(nodo_filho);
-					closeStates->push_back(nodo_filho);
-				}
-			}
+			filhos.push_back(nodo_filho);
 		}
 	}
 
@@ -148,11 +147,11 @@ int bfs(Node *initialNode, int* finalState) {
 	Node* currentNode;
 	deque<Node*> fila;
 
-	vector<Node*> *closeStates = new vector<Node*>;
-	vector<Node*> *filhos = new vector<Node*>;
+	vector<int*> closeStates;
+	vector<Node*> filhos;
 
 	fila.push_back(initialNode);
-	closeStates->push_back(initialNode);
+	closeStates.push_back(initialNode->state);
 
 	if(compareStates(initialNode->state, finalState)) {
 		return 1;
@@ -162,16 +161,17 @@ int bfs(Node *initialNode, int* finalState) {
 		currentNode = fila.front();
 		fila.pop_front();
 
-		if(!closeStates->empty()) {		
-			filhos = geraFilhos(currentNode, closeStates);
+		if(!closeStates.empty()) {		
+			filhos = geraFilhos(currentNode, &closeStates);
 		}
 
-		for(int i = 0; i < filhos->size(); i++) {
-			if(compareStates(filhos->at(i)->state, finalState)) {
-				cout << filhos->at(i)->cost << endl;
+		for(int i = 0; i < filhos.size(); i++) {
+			if(compareStates(filhos.at(i)->state, finalState)) {
+				cout << filhos.at(i)->cost << endl;
 				return 1;
 			}else{
-				fila.push_back(filhos->at(i));
+				fila.push_back(filhos.at(i));
+				closeStates.push_back(filhos.at(i)->state);
 			}
 		}
 	}
@@ -179,10 +179,7 @@ int bfs(Node *initialNode, int* finalState) {
 }
 
 int main() {
-	//int initialState[PUZZLESIZE] = {1, 6, 7, 2, 5, 3, 4, 0, 8};
-	int initialState[PUZZLESIZE] = {3, 1, 2,
-									6, 4, 5,
-									7, 0, 8};
+	int initialState[PUZZLESIZE] = {1, 6, 7, 2, 5, 3, 4, 0, 8};
 	int finalState[PUZZLESIZE] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
 	Node *initialNode = createNode(initialState, 0, 0, -1);
 
