@@ -1,6 +1,7 @@
 /*
 FELIPE HOMRICH MELCHIOR
 UNIPAMPA - 161150758
+https://github.com/homdreen/8Puzzle_with_bfs_and_dfs
 */
 
 #include <iostream>
