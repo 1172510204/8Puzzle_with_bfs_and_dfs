@@ -9,6 +9,7 @@ https://github.com/homdreen/8Puzzle_with_bfs_and_dfs
 #include <stack> //Biblioteca da pilha
 #include <vector> //Biblioteca do vector
 #include <ctime> // Biblioteca do tempo
+#include <algorithm> //Bibliteca para o sort
 
 #define PUZZLESIZE 9 //Definido o tamanho do desafio
 
@@ -126,13 +127,27 @@ int nodeExisting(int* newState, vector<int*>*closeStates) { // Compara um estado
 	return 0;
 }
 
+int moreMiss(int *newState) {
+	int count=0;
+	
+	for(int i = 0; i < PUZZLESIZE; i++) {
+		if(newState[i] != (i-1)) count++;
+	}
+
+	return count;
+}
+
 vector<Node*> geraFilhos(Node* currentNode, vector<int*>*closeStates) { //Funcao que gera os estados-filhos atraves do estado-pai
-	int blank;
+	int blank, indice=0, custo=999999;
 	int* newState = (int*) malloc(sizeof(int)*(PUZZLESIZE));
 	Node* nodo_filho = new Node;
 	vector<Node*> filhos;
+	vector<Node*> aux;
+	vector<Node*> aux2;
 
-	if(currentNode->d+1 > 40) return filhos;
+	//cout << currentNode->d << endl;
+
+	if(currentNode->d+1 > 32) return filhos;
 
 	for(int i = 0; i < PUZZLESIZE; i++) {
 		if(currentNode->state[i] == 0) blank = i;
@@ -142,14 +157,29 @@ vector<Node*> geraFilhos(Node* currentNode, vector<int*>*closeStates) { //Funcao
 		newState = createState(currentNode->state, blank, i+1);
 
 		if(!(compareStates(currentNode->state, newState)) && !(nodeExisting(newState, closeStates))) {
-			nodo_filho = createNode(newState, currentNode->d+1, currentNode->cost+1, i);
+			nodo_filho = createNode(newState, currentNode->d+1, moreMiss(newState), i);
 
-			filhos.push_back(nodo_filho);
+			aux.push_back(nodo_filho);
 		}
 	}
 
-	return filhos;
+	while(!aux.empty()) {
+		for(int i = 0; i < aux.size(); i++) {
+			if(aux.at(i)->cost < custo) {
+				custo = aux.at(i)->cost;
+				indice = i;
+			}
+		}
 
+		if(custo != 999999) {
+			filhos.push_back(aux.at(indice));
+			aux.erase(aux.begin() + indice);
+			indice = 0;
+			custo = 999999;
+		} 
+	}
+
+	return filhos;
 }
 
 int bfs(Node *initialNode, int* finalState) { //Busca em largura com fila
@@ -177,7 +207,7 @@ int bfs(Node *initialNode, int* finalState) { //Busca em largura com fila
 		for(int i = 0; i < filhos.size(); i++) {
 			if(compareStates(filhos.at(i)->state, finalState)) {
 				//printState(filhos.at(i)->state);
-				cout << "BFS -> Solução encontrada com " << filhos.at(i)->cost << " Movimentos ";
+				cout << "BFS -> Solução encontrada com " << filhos.at(i)->d << " de profundidade ";
 				return 1;
 			}else{
 				fila.push_back(filhos.at(i));
@@ -232,7 +262,7 @@ int main(void) {
 	/*Declaração do estado inicial, com um exemplo ja comentado
 	{4, 3, 0, 6, 7, 2, 8, 1, 5}; -> BFS-> Cerca de 0.2s :: DFS-> Cerca de 17s
 	*/
-	int initialState[PUZZLESIZE] =  /*{1, 6, 7, 2, 5, 3, 4, 0, 8}; */{4, 3, 0, 6, 7, 2, 8, 1, 5};
+	int initialState[PUZZLESIZE] =  { 1, 2, 5, 3, 4, 0, 6, 7, 8};//{4, 3, 0, 6, 7, 2, 8, 1, 5};//{1, 6, 7, 2, 5, 3, 4, 0, 8}; */
  	int finalState[PUZZLESIZE] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
 	clock_t tempo;
 	Node *initialNode = createNode(initialState, 0, 0, -1); //Criacao do nodo inicial
